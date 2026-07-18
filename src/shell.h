@@ -9,5 +9,6 @@ void repl();
 void initialize();
 void command_handling(char *);
 char* search_for_executable(const char*);
+void execute_process(char*, char**);
 
 #endif

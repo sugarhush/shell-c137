@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include "shell.h"
 
@@ -45,9 +47,28 @@ void command_handling(char *command) {
             }
         }
     }
+
     else {
-        printf("%s: command not found\n", command);
+        char *args[INPUT_SIZE/2];
+        int argc = 0;
+        char *token = strtok(command," ");
+        while (token != NULL) {
+            args[argc++] = token;
+            token=strtok(NULL," ");
+        }
+        args[argc]=NULL;
+
+        char* path = search_for_executable(args[0]);
+        printf("%s", path);
+
+        if (path != NULL) {
+            execute_process(path, args);
+            free(path);
+        } else {
+            printf("%s: command not found\n", args[0]);
+        }
     }
+
 }
 
 char* search_for_executable(const char* filename) {
@@ -74,4 +95,19 @@ char* search_for_executable(const char* filename) {
 
     free(path_copy);
     return NULL;
+}
+
+void execute_process(char *path, char *args[]) {
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        printf("\n");
+        execv(path, args);
+        perror("Execution Failed");
+        exit(1);
+    } else if (pid > 0) {
+        wait(NULL);
+    } else {
+        perror("fork");
+    }
 }
